@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c1220" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f4f8" media="(prefers-color-scheme: light)">
+<meta name="description" content="밤새 녹음해서 코골이 시간과 호흡 멈춤 의심 패턴을 분석하는 웹앱">
+<title>잠소리</title>
+<!-- 아이폰 홈 화면 앱 설정 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="잠소리">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 3.2a8.6 8.6 0 1 0 5.3 13.6A7 7 0 0 1 15.5 3.2z"/></svg>
+      <span class="brand-name">잠소리</span>
+    </div>
+    <span id="storeNote" class="top-note" hidden>이 브라우저에서는 기록이 저장되지 않아요</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- 기록하기 -->
+  <section id="view-record" class="view" aria-labelledby="recTitle">
+    <div class="intro">
+      <p class="eyebrow">오늘 밤 기록</p>
+      <h1 id="recTitle" class="display">자는 동안 들리는 소리로 코골이를 세어 드릴게요</h1>
+      <p class="lede">휴대폰을 머리맡 50cm–1m 거리에 두고 충전기를 꽂은 채 시작하세요. 밤새 녹음한 원본은 저장하지 않고, 소리의 특징과 확인용 짧은 클립만 이 기기에 남겨요.</p>
+    </div>
+
+    <div class="panel install" id="installCard" hidden>
+      <div class="install-head">
+        <img src="icons/icon-180.png" alt="" class="install-icon" width="52" height="52">
+        <div class="install-text">
+          <h2 class="h2">아이폰 홈 화면에 앱으로 추가하기</h2>
+          <p class="hint">추가하면 주소창 없이 앱처럼 열리고, 기록도 지워지지 않게 더 안전하게 보관돼요.</p>
+        </div>
+      </div>
+      <ol class="steps">
+        <li>화면 아래(또는 위)의 <b>공유</b> 버튼 <svg class="share-ic" viewBox="0 0 24 24" aria-label="공유 아이콘"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5v10h14V11h-1"/></svg>을 누르세요.</li>
+        <li>목록을 내려 <b>홈 화면에 추가</b>를 누르세요.</li>
+        <li>오른쪽 위 <b>추가</b>를 누른 뒤, 홈 화면에 생긴 <b>잠소리</b> 아이콘으로 여세요.</li>
+      </ol>
+      <p class="hint">Safari와 홈 화면 앱은 기록을 따로 저장해요. 앱을 추가한 뒤에는 앱에서만 녹음하세요.</p>
+      <div class="row end"><button class="btn btn-ghost" type="button" id="btnInstallHide">닫기</button></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="h2">오늘 밤 요인</h2>
+      <p class="hint">해당하는 걸 골라 두면 여러 밤을 비교해서 무엇이 코골이를 늘리는지 알려 드려요.</p>
+      <div class="chips" id="factorChips"></div>
+      <div class="fields">
+        <label class="field" for="excludeMin"><span>잠들기 전 제외</span>
+          <select id="excludeMin">
+            <option value="0">없음</option>
+            <option value="10">처음 10분</option>
+            <option value="20" selected>처음 20분</option>
+            <option value="30">처음 30분</option>
+          </select>
+        </label>
+        <label class="field" for="sensitivity"><span>감지 민감도</span>
+          <select id="sensitivity">
+            <option value="low">낮음 (확실한 것만)</option>
+            <option value="normal" selected>보통</option>
+            <option value="high">높음 (작은 코골이까지)</option>
+          </select>
+        </label>
+      </div>
+      <button id="btnStart" class="btn btn-primary btn-big" type="button">녹음 시작</button>
+      <p id="micError" class="error" role="alert" hidden></p>
+    </div>
+
+    <div class="panel" id="iosNightCard" hidden>
+      <h2 class="h2">아이폰에서 밤새 녹음하려면</h2>
+      <ul class="ticks">
+        <li><b>설정 → 디스플레이 및 밝기 → 자동 잠금 → 안 함</b>으로 바꿔 주세요. 화면이 잠기면 아이폰은 녹음을 멈춰요.</li>
+        <li><b>저전력 모드는 꺼 주세요.</b> 켜져 있으면 자동 잠금이 30초로 고정돼요.</li>
+        <li>녹음 중에는 다른 앱으로 넘어가지 말고, "화면 어둡게"를 눌러 검은 화면으로 두세요.</li>
+        <li>아침에 자동 잠금을 원래대로 돌려 두세요.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h2 class="h2">더 정확하게 재려면</h2>
+      <ul class="ticks">
+        <li>방해 금지 모드를 켜서 알림 소리가 섞이지 않게 해 주세요.</li>
+        <li>휴대폰 아래쪽 마이크가 이불이나 베개에 가리지 않게 두세요.</li>
+        <li>선풍기·가습기는 휴대폰에서 멀리 두세요. 일정한 소음은 자동으로 걸러내지만 너무 크면 코골이를 놓쳐요.</li>
+        <li>같이 자는 사람이 코를 골면 그 소리도 함께 세져요.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h2 class="h2">녹음 파일 분석</h2>
+      <p class="hint">다른 녹음 앱으로 밤새 녹음한 파일(m4a, mp3, wav)도 분석할 수 있어요. 브라우저 메모리 한계 때문에 2시간 이내 파일을 권해요.</p>
+      <div class="fields">
+        <label class="field grow" for="fileInput"><span>녹음 파일</span>
+          <input type="file" id="fileInput" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.webm">
+        </label>
+        <label class="field" for="fileStart"><span>녹음 시작 시각 (비우면 자동)</span>
+          <input type="datetime-local" id="fileStart">
+        </label>
+      </div>
+      <button id="btnFile" class="btn" type="button">파일 분석하기</button>
+      <div id="fileProgress" class="progress" hidden>
+        <div class="progress-track"><div class="progress-bar" id="fileBar"></div></div>
+        <span class="progress-text" id="fileText">읽는 중…</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 리포트 -->
+  <section id="view-report" class="view" hidden aria-label="리포트">
+    <div id="reportEmpty" class="empty" hidden>
+      <p class="eyebrow">리포트</p>
+      <h1 class="display">아직 기록이 없어요</h1>
+      <p class="lede">오늘 밤 녹음을 시작하거나, 예시 기록으로 리포트가 어떻게 생겼는지 먼저 살펴보세요.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-go="record">녹음하러 가기</button>
+        <button class="btn" type="button" data-demo>예시 기록 불러오기</button>
+      </div>
+    </div>
+
+    <div id="reportBody" hidden>
+      <div class="report-head">
+        <label class="field grow" for="nightSelect"><span>기록</span><select id="nightSelect"></select></label>
+        <label class="field" for="reSens"><span>민감도</span>
+          <select id="reSens">
+            <option value="low">낮음</option>
+            <option value="normal">보통</option>
+            <option value="high">높음</option>
+          </select>
+        </label>
+      </div>
+      <p class="report-sub" id="reportSub"></p>
+
+      <div class="tiles" id="tiles"></div>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2 class="h2">밤사이 코골이</h2>
+          <div class="legend" aria-label="범례">
+            <span><i class="sw lv1"></i>약</span>
+            <span><i class="sw lv2"></i>중</span>
+            <span><i class="sw lv3"></i>강</span>
+            <span><svg class="tri" viewBox="0 0 10 9" aria-hidden="true"><path d="M5 0L10 9H0Z"/></svg>호흡 멈춤 의심</span>
+          </div>
+        </div>
+        <div class="chart" id="timeline"></div>
+        <p class="hint">막대 높이는 1분에 코를 곤 횟수, 색은 주변 소음보다 얼마나 컸는지예요. 막대를 누르면 자세히 보여요.</p>
+      </article>
+
+      <article class="panel">
+        <h2 class="h2">분석 결과</h2>
+        <ul class="findings" id="findings"></ul>
+        <p class="disclaimer">휴대폰 녹음으로 추정한 값이라 의학적 진단이 아니에요. 수면무호흡은 병원의 수면다원검사로만 확진할 수 있어요.</p>
+      </article>
+
+      <article class="panel">
+        <h2 class="h2">시간대별 코골이</h2>
+        <div class="chart" id="hourly"></div>
+        <details class="table-wrap">
+          <summary>표로 보기</summary>
+          <div class="scroll-x" id="hourlyTable"></div>
+        </details>
+      </article>
+
+      <article class="panel">
+        <h2 class="h2">확인용 소리</h2>
+        <p class="hint">호흡 멈춤 의심 구간과 코골이 샘플을 짧게 저장해 뒀어요. 직접 들어보고, 진료받을 때 의사에게 들려줄 수 있어요.</p>
+        <ul class="clips" id="clips"></ul>
+      </article>
+
+      <article class="panel">
+        <h2 class="h2">세부 지표</h2>
+        <dl class="metrics" id="metrics"></dl>
+      </article>
+
+      <article class="panel">
+        <h2 class="h2">이 밤의 요인과 메모</h2>
+        <div class="chips" id="nightFactors"></div>
+        <label class="field" for="nightNote"><span>메모</span>
+          <textarea id="nightNote" rows="2" placeholder="예: 새벽 3시쯤 한 번 깸, 저녁에 매운 음식"></textarea>
+        </label>
+        <div class="row end">
+          <button class="btn btn-danger" type="button" id="btnDeleteNight">이 기록 삭제</button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 비교 -->
+  <section id="view-history" class="view" hidden aria-labelledby="histTitle">
+    <div id="historyEmpty" class="empty" hidden>
+      <p class="eyebrow">여러 밤 비교</p>
+      <h1 class="display">기록이 쌓이면 패턴이 보여요</h1>
+      <p class="lede">3일 이상 기록하면 습관성 코골이인지, 술이나 자세 같은 요인이 얼마나 영향을 주는지 비교해 드려요.</p>
+      <div class="row">
+        <button class="btn btn-primary" type="button" data-go="record">녹음하러 가기</button>
+        <button class="btn" type="button" data-demo>예시 기록 불러오기</button>
+      </div>
+    </div>
+    <div id="historyBody" hidden>
+      <p class="eyebrow">여러 밤 비교</p>
+      <h1 class="display" id="histTitle">요즘 코골이는 어땠을까요</h1>
+      <ul class="findings" id="trendInsights"></ul>
+      <article class="panel">
+        <h2 class="h2">밤별 코골이 비율</h2>
+        <div class="chart" id="trend"></div>
+        <p class="hint">막대를 누르면 그날 리포트로 가요.</p>
+      </article>
+      <article class="panel">
+        <h2 class="h2">무엇이 코골이를 바꿀까</h2>
+        <p class="hint">요인을 체크한 밤과 체크하지 않은 밤의 평균 코골이 비율 차이예요. 양쪽 모두 2번 이상 기록해야 믿을 만해요.</p>
+        <div id="factorTable"></div>
+      </article>
+      <article class="panel">
+        <h2 class="h2">모든 기록</h2>
+        <ul class="night-list" id="nightList"></ul>
+        <div class="row end"><button class="btn btn-ghost" type="button" id="btnClearDemo" hidden>예시 기록 지우기</button></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 건강 체크 -->
+  <section id="view-health" class="view" hidden aria-labelledby="healthTitle">
+    <p class="eyebrow">건강 체크</p>
+    <h1 class="display" id="healthTitle">수면무호흡 위험도 함께 볼까요</h1>
+    <p class="lede">STOP-Bang은 병원에서 수면무호흡 위험을 가늠할 때 쓰는 8문항 설문이에요. 녹음 결과와 함께 보면 판단이 더 정확해져요.</p>
+
+    <article class="panel">
+      <form id="stopbang" class="sb" autocomplete="off">
+        <fieldset class="sb-group">
+          <legend class="h2">증상</legend>
+          <label class="check" for="sbS"><input type="checkbox" id="sbS" name="S"><span><b>코골이가 커요</b> 닫힌 문 너머로 들리거나 옆 사람이 깰 정도</span></label>
+          <p class="sb-auto" id="sbAuto" hidden></p>
+          <label class="check" for="sbT"><input type="checkbox" id="sbT" name="T"><span><b>낮에 자주 피곤하거나 졸려요</b> 운전이나 회의 중에 졸 정도</span></label>
+          <label class="check" for="sbO"><input type="checkbox" id="sbO" name="O"><span><b>자다가 숨을 멈춘다는 말을 들었어요</b> 숨이 막히거나 헉 하는 소리를 낸다는 말도 포함</span></label>
+          <label class="check" for="sbP"><input type="checkbox" id="sbP" name="P"><span><b>고혈압이 있거나 치료 중이에요</b></span></label>
+        </fieldset>
+        <fieldset class="sb-group">
+          <legend class="h2">몸 정보</legend>
+          <div class="fields">
+            <label class="field" for="sbAge"><span>나이</span><input type="number" id="sbAge" inputmode="numeric" min="10" max="110" placeholder="세"></label>
+            <label class="field" for="sbSex"><span>성별</span>
+              <select id="sbSex"><option value="">선택</option><option value="m">남성</option><option value="f">여성</option></select>
+            </label>
+            <label class="field" for="sbH"><span>키 (cm)</span><input type="number" id="sbH" inputmode="decimal" min="100" max="230"></label>
+            <label class="field" for="sbW"><span>몸무게 (kg)</span><input type="number" id="sbW" inputmode="decimal" min="25" max="300"></label>
+            <label class="field" for="sbNeck"><span>목둘레 (cm)</span><input type="number" id="sbNeck" inputmode="decimal" min="20" max="70" placeholder="셔츠 깃 둘레"></label>
+          </div>
+        </fieldset>
+      </form>
+      <div class="sb-result" id="sbResult" aria-live="polite"></div>
+    </article>
+
+    <article class="panel">
+      <h2 class="h2">이럴 땐 검사를 받아보세요</h2>
+      <ul class="ticks">
+        <li>녹음에서 호흡 멈춤 의심이 시간당 5회 이상인 밤이 반복될 때</li>
+        <li>코골이가 크고, 낮에 졸리거나 아침에 머리가 아플 때</li>
+        <li>자다가 숨이 막혀 깨거나, 숨을 멈춘다는 말을 들었을 때</li>
+        <li>고혈압, 부정맥, 당뇨가 있는데 코골이가 심할 때</li>
+      </ul>
+      <p class="body">수면다원검사는 병원에서 하룻밤 자면서 뇌파, 호흡, 혈중 산소, 다리 움직임을 함께 재는 검사예요. 우리나라에서는 2018년 7월부터 수면무호흡이 의심되는 경우 건강보험이 적용돼요. 이비인후과, 신경과, 정신건강의학과의 수면클리닉에서 받을 수 있어요. 진료 갈 때 이 앱의 리포트와 확인용 소리를 보여주면 상담에 도움이 돼요.</p>
+    </article>
+
+    <article class="panel">
+      <h2 class="h2">이 앱이 알 수 있는 것과 없는 것</h2>
+      <div class="two-col">
+        <div>
+          <h3 class="h3">알 수 있어요</h3>
+          <ul class="ticks">
+            <li>밤새 코를 곤 시간(분)과 비율</li>
+            <li>코골이 크기, 몰리는 시간대, 켜졌다 꺼지는 모양</li>
+            <li>코골이 중 10초 넘게 조용하다 크게 다시 시작하는 패턴</li>
+            <li>술·자세·코막힘 같은 요인과 코골이의 관계</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="h3">알 수 없어요</h3>
+          <ul class="ticks no">
+            <li>혈중 산소 감소, 뇌파로 본 수면 단계</li>
+            <li>코골이 없이 생기는 무호흡 (중추성 수면무호흡)</li>
+            <li>옆 사람 코골이와 내 코골이의 구별</li>
+            <li>정확한 소리 크기(dB SPL) — 휴대폰마다 마이크 감도가 달라요</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2 class="h2">데이터</h2>
+      <p class="hint" id="storageInfo">기록은 이 기기의 브라우저에만 저장되고 어디에도 보내지 않아요.</p>
+      <div class="row">
+        <button class="btn" type="button" id="btnExport">기록 내보내기 (JSON)</button>
+        <button class="btn btn-danger" type="button" id="btnClearAll">모든 기록 삭제</button>
+      </div>
+    </article>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="화면 이동">
+  <div class="tabs-inner">
+    <button type="button" class="tab" data-tab="record" aria-current="page">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+      <span>기록하기</span>
+    </button>
+    <button type="button" class="tab" data-tab="report">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M9.3 20V5M14.7 20v-8M20 20V8"/></svg>
+      <span>리포트</span>
+    </button>
+    <button type="button" class="tab" data-tab="history">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+      <span>비교</span>
+    </button>
+    <button type="button" class="tab" data-tab="health">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/></svg>
+      <span>건강 체크</span>
+    </button>
+  </div>
+</nav>
+
+<!-- 녹음 중 화면 (밤에는 항상 어둡게) -->
+<div id="night" class="night" hidden>
+  <div class="night-inner" id="nightInner">
+    <p class="night-label" id="nightLabel">녹음 중</p>
+    <div class="night-clock" id="nightClock">00:00</div>
+    <p class="night-elapsed" id="nightElapsed">방금 시작했어요</p>
+    <div class="meter" aria-hidden="true"><div class="meter-fill" id="meterFill"></div></div>
+    <dl class="night-stats">
+      <div><dt>코골이</dt><dd id="nsMin">0분</dd></div>
+      <div><dt>감지 횟수</dt><dd id="nsCount">0회</dd></div>
+      <div><dt>멈춤 의심</dt><dd id="nsAp">0회</dd></div>
+    </dl>
+    <p class="night-status" id="nightStatus"></p>
+    <div class="night-actions">
+      <button class="btn btn-night" type="button" id="btnDim">화면 어둡게</button>
+      <button class="btn btn-night btn-night-stop" type="button" id="btnStop">녹음 끝내기</button>
+    </div>
+  </div>
+  <button class="dimmer" id="dimmer" type="button" hidden aria-label="화면 다시 켜기"><span id="dimText">녹음 중 · 누르면 다시 보여요</span></button>
+</div>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

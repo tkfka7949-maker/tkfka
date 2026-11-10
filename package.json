@@ -1,0 +1,11 @@
+{
+  "name": "jamsori",
+  "version": "0.1.0",
+  "private": true,
+  "description": "잠소리 — 밤새 녹음해서 코골이 시간과 패턴을 분석하는 웹앱",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/run-test.js"
+  }
+}
